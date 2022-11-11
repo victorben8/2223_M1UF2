@@ -1,31 +1,46 @@
 #!/bin/bash
 
-PORT="3745"
-SERVER_AD="localhost"
+PORT="2223"
+SERVER_ADDRESS="localhost"
 
 echo "Cliente TURIP"
 
-echo "(1)SEND MSG: HOLI_TURIP"
+echo "(1) SEND MSG: HOLI_TURIP 127.0.0.1"
+echo "HOLI_TURIP 127.0.0.1" | nc $SERVER_ADDRESS $PORT
 
-echo "HOLI_TURIP 127.0.0.1" | nc $SERVER_AD $PORT
+# Nos ponemos en escucha por el puerto 2223 para recibir la respuesta
 
-echo "(2) Listen: comprobación del handshake"
-
+echo "(2) LISTEN: Comprobacion Handshake"
 MSG=`nc -l $PORT`
 
-echo $MSG
+# Validamos si el mensaje recibido es OK_TURIP
+# En caso de recibir KO_TURIP, mostramos mensaje de error y salimos
+#	con el código de estado 1
 
-if [ $MSG != "OK_TURIP" ]
+if [ "$MSG" != "OK_TURIP" ]
 then
-
 	echo "ERROR 1: Handshake incorrecto"
-	
 	exit 1
 fi
 
-echo "(5)SEND"
-echo "FILE_NAME vaca.vaca" | nc -l $PORT
-echo "(6)listen"
+# Enviamos el nombre del archivo a generar por el servidor
+echo "(5) SEND MSG: FILE_NAME filename"
 
+FILE_NAME="vaca.vaca"
+
+echo "FILE_NAME $FILE_NAME" | nc $SERVER_ADDRESS $PORT
+
+echo "(6) LISTEN: Comprobacion Filename"
+MSG=`nc -l $PORT`
+
+if [ "$MSG" != "OK_FILE_NAME" ]
+then
+	echo "ERROR 2: Nombre de archivo mal formado"
+	exit 2
+fi
+
+echo "(9) SEND: Datos de vaca"
+cat vacas/$FILE_NAME | nc $SERVER_ADDRESS $PORT
 
 exit 0
+

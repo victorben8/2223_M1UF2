@@ -1,35 +1,56 @@
 #!/bin/bash
 
-PORT="3745"
+# Nombre del protocolo
+# Transfer Unite Recursive International Protocol
+# TURIP
+# Puerto 2223
 
-echo "Servidor Transfer Unite Recursive International Protocol (TURIP)"
+PORT="2223"
 
-echo "(0)LISTEN"
+echo "Servidor Transfer Unite Recursive International Protocol"
 
+echo "(0) LISTEN HANDSHAKE"
 MSG=`nc -l $PORT`
+
+# Revisamos si el mensaje recibido es correcto
+# Para ello separados el código de error recibido de la IP
+# En caso de no ser correcto, mostraremos un mensaje de ERROR
+# 	y salimos con el código de estado 1
 
 HANDSHAKE=`echo $MSG | cut -d " " -f 1`
 IP_CLIENT=`echo $MSG | cut -d " " -f 2`
 
-echo "(3) comprobación del handshake"
+# Revisamos todas las opciones que se encuentran mal y por
+# último hacemos la opción correcta fuera del IF
+echo "(3) SEND MSG: OK_TURIP / KO_TURIP"
 if [ "$HANDSHAKE" != "HOLI_TURIP" ]
 then
-	
 	echo "ERROR 1: Handshake incorrecto"
-
-	echo "KO_TURIP" | nc $IP_CLIENT $PORT
-	
+	echo "KO_TURIP" | nc $IP_CLIENT $PORT 
 	exit 1
 fi
 
-echo "OK_TURIP" | nc $IP_CLIENT
+echo "OK_TURIP" | nc $IP_CLIENT $PORT 
 
-echo "(4) LISTEN"
-
+echo "(4) LISTEN FILENAME"
 MSG=`nc -l $PORT`
 
-FILE_NAME=`echo $MSG | cut -d " " -f 2`
+# Cogemos el prefijo y el nombre de archivo
+PREFIX=`echo $MSG | cut -d " " -f 1`
+FILENAME=`echo $MSG | cut -d " " -f 2`
 
+echo "(7) SEND MSG: OK_FILE_NAME / KO_FILE_NAME"
+if [ "$PREFIX" != "FILE_NAME" ]
+then
+	echo "ERROR 2: Nombre de archivo mal formado"
+	echo "KO_FILE_NAME" | nc $IP_CLIENT $PORT
+	exit 2
+fi
 
+echo "OK_FILE_NAME" | nc $IP_CLIENT $PORT
 
+echo "(8) LISTEN: Datos de vaca"
+MSG=`nc -l $PORT`
+
+nc -l $PORT > inbox/$FILE_NAME
 exit 0
